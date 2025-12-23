@@ -189,4 +189,5 @@ pnpm run lint
 
 ## お問い合わせ
 
-バグ報告や機能要望は、GitHubのIssuesまでお願いします。
+バグ報告や機能要望は、GitHubのIssuesまでお願いします。"" 
+"<!-- Deployment test -->" 
