@@ -19,7 +19,7 @@
 - ✅ Vercelアカウント（未作成でもOK、手順内で作成）
 - ✅ Google Domainsで取得済みのドメイン: `do-deuce-fan.com`
 - ✅ Supabaseプロジェクトの情報（URL と ANON KEY）
-- ✅ ローカルに動作確認済みのプロジェクト（`/workspace/shadcn-ui/`）
+- ✅ ローカルに動作確認済みのプロジェクト（`/workspace/dodeuce-fan-site/`）
 
 ### 重要な注意事項
 ⚠️ **この手順書では既存のソースコードを一切変更しません**
@@ -61,7 +61,7 @@
 プロジェクトディレクトリに移動し、.gitignoreが正しく設定されているか確認します。
 
 ```bash
-cd /workspace/shadcn-ui
+cd /workspace/dodeuce-fan-site
 cat .gitignore
 ```
 
@@ -114,7 +114,7 @@ EOF
 
 ```bash
 # 1. Gitリポジトリを初期化
-cd /workspace/shadcn-ui
+cd /workspace/dodeuce-fan-site
 git init
 
 # 2. すべてのファイルをステージング
@@ -218,7 +218,7 @@ git push -u origin main
 - **VITE_SUPABASE_URL**: `https://abfyrhetmcnpaxapwuiv.supabase.co`
 - **VITE_SUPABASE_ANON_KEY**: `eyJhbGci...`（長い文字列）
 
-これらは `/workspace/shadcn-ui/.env.local` ファイルに記載されています。
+これらは `/workspace/dodeuce-fan-site/.env.local` ファイルに記載されています。
 
 ### 3-2. Vercelで環境変数を設定（画面操作）
 
@@ -305,7 +305,7 @@ Vercelは、GitHubリポジトリの `main` ブランチに変更がプッシュ
 **テスト用の小さな変更を加える**:
 
 ```bash
-cd /workspace/shadcn-ui
+cd /workspace/dodeuce-fan-site
 
 # READMEファイルに1行追加（テスト用）
 echo "" >> README.md
@@ -532,7 +532,7 @@ https://www.do-deuce-fan.com
    - **原因**: 依存関係が不足している
    - **対処**: ローカルで確認
      ```bash
-     cd /workspace/shadcn-ui
+     cd /workspace/dodeuce-fan-site
      pnpm install
      pnpm run build
      ```
