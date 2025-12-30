@@ -10,9 +10,11 @@ export default function HomePage() {
           種牡馬 ドウデュース 応援サイト
         </h1>
         <p className="mx-auto mb-8 max-w-2xl text-lg text-gray-600">
-          2022年 皐月賞・日本ダービー・有馬記念を制した三冠馬ドウデュース。
+          数々の大舞台を制し、時代を代表する名馬となったドウデュース。
           <br />
-          種牡馬として新たなスタートを切った彼の交配牝馬情報をまとめています。
+          本サイトでは、種牡馬として新たなスタートを切った彼の歩みと、
+           <br />
+          交配牝馬の情報を中心にまとめています。
         </p>
         <Link to="/mares/2025">
           <Button size="lg" className="bg-blue-700 hover:bg-blue-800">
@@ -28,11 +30,21 @@ export default function HomePage() {
           </CardHeader>
           <CardContent className="space-y-4 text-gray-700">
             <p>
-              <strong>父:</strong> ハーツクライ <strong>母:</strong> ダンスディレクター <strong>母父:</strong> サンデーサイレンス
+              <strong>父:</strong> ハーツクライ <strong>母:</strong> ダストアンドダイヤモンズ <strong>母父:</strong> Vindication
+              <br />
+              <strong>馬主:</strong> キーファーズ　
+              <strong>生産:</strong> ノーザンファーム
             </p>
             <p>
-              2022年、皐月賞・日本ダービー・有馬記念を制し、無敗の三冠馬として競馬ファンの記憶に残る活躍を見せました。
-              引退後は種牡馬として新たなキャリアをスタートし、その産駒たちの活躍が期待されています。
+              2019年生まれの鹿毛の牡馬。2歳時に朝日杯フューチュリティステークスを制し、
+              早くから世代の頂点候補として注目を集めました。
+              <br />
+              その後、2022年の日本ダービーを制覇。さらに有馬記念、天皇賞（秋）、
+              ジャパンカップといった最高峰の舞台で勝利を重ね、
+              多くの競馬ファンの記憶に深く刻まれる存在となりました。
+              <br />
+              2024年をもって現役を引退し、現在は種牡馬として新たな物語を歩み始めています。
+              その血を受け継ぐ産駒たちの未来に、大きな期待が寄せられています。
             </p>
           </CardContent>
         </Card>
