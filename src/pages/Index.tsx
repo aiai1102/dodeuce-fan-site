@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
-import { Trophy, Calendar, Award } from 'lucide-react';
+import { Calendar, Award } from 'lucide-react';
 
 export default function HomePage() {
   const fadeInUp = {
@@ -42,14 +42,6 @@ export default function HomePage() {
           animate="animate"
           variants={stagger}
         >
-          <motion.div
-            variants={fadeInUp}
-            className="mb-6 inline-flex items-center gap-2 px-4 py-2 bg-accent/90 text-accent-foreground rounded-full text-sm font-semibold shadow-lg"
-          >
-            <Trophy className="w-4 h-4" />
-            <span>第170回 天皇賞（秋）優勝</span>
-          </motion.div>
-
           <motion.h1
             variants={fadeInUp}
             className="mb-6 text-5xl sm:text-6xl md:text-7xl font-bold text-white drop-shadow-2xl"
@@ -143,10 +135,10 @@ export default function HomePage() {
           {[
             { year: '2021', race: '朝日杯フューチュリティステークス', grade: 'G1', place: '阪神' },
             { year: '2022', race: '東京優駿（日本ダービー）', grade: 'G1', place: '東京' },
-            { year: '2022', race: '有馬記念', grade: 'G1', place: '中山' },
-            { year: '2023', race: '金鯱賞', grade: 'G2', place: '中京' },
+            { year: '2023', race: '京都記念', grade: 'G2', place: '京都' },
+            { year: '2023', race: '有馬記念', grade: 'G1', place: '中山' },
+            { year: '2024', race: '天皇賞（秋）', grade: 'G1', place: '東京' },
             { year: '2024', race: 'ジャパンカップ', grade: 'G1', place: '東京' },
-            { year: '2024', race: '天皇賞（秋）', grade: 'G1', place: '東京', featured: true },
           ].map((race, index) => (
             <motion.div
               key={index}
@@ -155,7 +147,7 @@ export default function HomePage() {
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
             >
-              <Card className={`h-full hover:shadow-xl transition-all ${race.featured ? 'border-accent border-2 bg-accent/5' : ''}`}>
+              <Card className="h-full hover:shadow-xl transition-all">
                 <CardHeader>
                   <div className="flex items-center justify-between mb-2">
                     <span className={`px-3 py-1 rounded-full text-sm font-bold ${
@@ -163,9 +155,6 @@ export default function HomePage() {
                     }`}>
                       {race.grade}
                     </span>
-                    {race.featured && (
-                      <Trophy className="w-5 h-5 text-accent" />
-                    )}
                   </div>
                   <CardTitle className="text-lg">{race.race}</CardTitle>
                   <CardDescription className="flex items-center gap-4 mt-2">
