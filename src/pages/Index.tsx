@@ -59,7 +59,7 @@ export default function HomePage() {
               <CardDescription>年別表示・検索・ソート機能</CardDescription>
             </CardHeader>
             <CardContent className="text-gray-700">
-              <p>2023年〜2025年の交配牝馬情報を年別に閲覧できます。</p>
+              <p>2025年からの交配牝馬情報を年別に閲覧できます。</p>
             </CardContent>
           </Card>
 
