@@ -20,9 +20,9 @@ export default function HomePage() {
   };
 
   return (
-    <>
+    <div className="overflow-x-hidden">
       {/* ヒーローセクション */}
-      <section className="relative h-[600px] sm:h-[700px] overflow-hidden">
+      <section className="relative h-[600px] sm:h-[700px] overflow-hidden w-full">
         {/* 背景画像 */}
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -72,7 +72,7 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      <div className="container mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <div className="container mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 overflow-x-hidden">
 
       {/* ドウデュースについて */}
       <motion.section
@@ -297,6 +297,6 @@ export default function HomePage() {
         </div>
       </motion.section>
       </div>
-    </>
+    </div>
   );
 }
