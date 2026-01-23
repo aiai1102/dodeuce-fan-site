@@ -44,9 +44,11 @@ export default function HomePage() {
         >
           <motion.h1
             variants={fadeInUp}
-            className="mb-6 text-5xl sm:text-6xl md:text-7xl font-bold text-white drop-shadow-2xl"
+            className="mb-6 text-5xl sm:text-6xl md:text-7xl font-bold text-white drop-shadow-2xl leading-tight"
           >
-            種牡馬 ドウデュース
+            種牡馬<br className="sm:hidden" />
+            <span className="hidden sm:inline"> </span>
+            ドウデュース
           </motion.h1>
 
           <motion.p
