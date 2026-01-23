@@ -12,7 +12,13 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, ExternalLink } from 'lucide-react';
 import { formatDate, formatPrize, formatNumber } from '@/lib/utils/format';
 
-const YEARS = [2023, 2024, 2025];
+// 2025年が初年度産駒、以降は毎年追加
+const START_YEAR = 2025;
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from(
+  { length: Math.max(1, currentYear - START_YEAR + 2) },
+  (_, i) => START_YEAR + i
+).filter(year => year <= currentYear + 1);
 
 export default function MaresListPage() {
   const { year } = useParams<{ year: string }>();
