@@ -95,7 +95,14 @@
     @apply border-border;
   }
 
+  html {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden;
+    width: 100%;
   }
 }

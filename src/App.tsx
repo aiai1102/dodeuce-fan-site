@@ -18,9 +18,9 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <BrowserRouter>
-        <div className="flex min-h-screen flex-col">
+        <div className="flex min-h-screen flex-col overflow-x-hidden">
           <Header />
-          <main className="flex-1">
+          <main className="flex-1 overflow-x-hidden">
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/mares/:year" element={<MaresList />} />
