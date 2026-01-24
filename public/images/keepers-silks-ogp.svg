@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <!-- 元禄模様（襷掛け）のパターン -->
+    <pattern id="genroku" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="60" height="60" fill="white"/>
+      <rect x="0" y="0" width="20" height="60" fill="#808080"/>
+    </pattern>
+
+    <!-- 袖の縦縞パターン -->
+    <pattern id="stripes" x="0" y="0" width="20" height="100" patternUnits="userSpaceOnUse">
+      <rect width="20" height="100" fill="#808080"/>
+      <rect x="0" y="0" width="10" height="100" fill="white"/>
+    </pattern>
+
+    <!-- グラデーション背景 -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c3aed;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4c1d95;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- 勝負服グループ（中央に配置） -->
+  <g transform="translate(400, 150)">
+    <!-- 影 -->
+    <ellipse cx="200" cy="420" rx="120" ry="20" fill="black" opacity="0.3"/>
+
+    <!-- 胴体（元禄模様） -->
+    <path d="M 150,80 L 120,150 L 120,300 C 120,320 130,330 150,340 L 150,340 L 250,340 C 270,330 280,320 280,300 L 280,150 L 250,80 Z"
+          fill="url(#genroku)"
+          stroke="#333"
+          stroke-width="2"/>
+
+    <!-- 左袖（縦縞） -->
+    <path d="M 120,150 L 80,180 L 70,260 L 90,280 L 120,270 L 120,200 Z"
+          fill="url(#stripes)"
+          stroke="#333"
+          stroke-width="2"/>
+
+    <!-- 右袖（縦縞） -->
+    <path d="M 280,150 L 320,180 L 330,260 L 310,280 L 280,270 L 280,200 Z"
+          fill="url(#stripes)"
+          stroke="#333"
+          stroke-width="2"/>
+
+    <!-- 襟 -->
+    <path d="M 150,80 L 170,90 L 170,120 L 150,115 Z" fill="white" stroke="#333" stroke-width="1"/>
+    <path d="M 250,80 L 230,90 L 230,120 L 250,115 Z" fill="white" stroke="#333" stroke-width="1"/>
+
+    <!-- ボタン -->
+    <circle cx="200" cy="140" r="5" fill="#333"/>
+    <circle cx="200" cy="170" r="5" fill="#333"/>
+    <circle cx="200" cy="200" r="5" fill="#333"/>
+  </g>
+
+  <!-- テキスト -->
+  <text x="600" y="520" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="white" text-anchor="middle">
+    ドウデュース応援サイト
+  </text>
+  <text x="600" y="570" font-family="Arial, sans-serif" font-size="28" fill="white" opacity="0.9" text-anchor="middle">
+    種牡馬ドウデュースと交配牝馬の情報
+  </text>
+</svg>
