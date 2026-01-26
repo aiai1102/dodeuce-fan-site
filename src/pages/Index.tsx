@@ -1,10 +1,31 @@
 import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
-import { Calendar, Award } from 'lucide-react';
+import { Calendar, Award, Newspaper } from 'lucide-react';
+import { NewsList } from '@/components/news/NewsList';
+import { getNews } from '@/lib/supabase/queries';
+import type { News } from '@/lib/types';
 
 export default function HomePage() {
+  const [news, setNews] = useState<News[]>([]);
+  const [newsLoading, setNewsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchNews() {
+      try {
+        const data = await getNews(5);
+        setNews(data);
+      } catch (error) {
+        console.error('Error fetching news:', error);
+      } finally {
+        setNewsLoading(false);
+      }
+    }
+    fetchNews();
+  }, []);
+
   const fadeInUp = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
@@ -122,6 +143,21 @@ export default function HomePage() {
             </p>
           </CardContent>
         </Card>
+      </motion.section>
+
+      {/* ニュース */}
+      <motion.section
+        className="mb-16"
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6, delay: 0.15 }}
+      >
+        <div className="flex items-center justify-center gap-3 mb-8">
+          <Newspaper className="w-8 h-8 text-primary" />
+          <h2 className="text-center text-4xl font-bold">ニュース</h2>
+        </div>
+        <NewsList news={news} loading={newsLoading} />
       </motion.section>
 
       {/* 主要勝鞍 */}

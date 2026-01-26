@@ -10,6 +10,7 @@ import MaresList from './pages/MaresList';
 import AdminLogin from './pages/AdminLogin';
 import AdminImport from './pages/AdminImport';
 import AdminMares from './pages/AdminMares';
+import AdminNews from './pages/AdminNews';
 import NotFound from './pages/NotFound';
 import { initGA, trackPageView } from '@/lib/analytics';
 
@@ -47,6 +48,7 @@ const App = () => {
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/admin/import" element={<AdminImport />} />
                 <Route path="/admin/mares" element={<AdminMares />} />
+                <Route path="/admin/news" element={<AdminNews />} />
                 <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

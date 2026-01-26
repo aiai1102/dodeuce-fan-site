@@ -1,5 +1,5 @@
 import { createClient } from './client';
-import type { MareWithCoverRecord, Mare, CoverRecord } from '@/lib/types';
+import type { MareWithCoverRecord, Mare, CoverRecord, News } from '@/lib/types';
 
 export async function getMaresByYear(year: number): Promise<MareWithCoverRecord[]> {
   const supabase = createClient();
@@ -127,6 +127,66 @@ export async function deleteMare(mareId: string): Promise<void> {
 
   if (error) {
     console.error('Error deleting mare:', error);
+    throw error;
+  }
+}
+
+// ============================================
+// News Queries
+// ============================================
+
+export async function getNews(limit?: number): Promise<News[]> {
+  const supabase = createClient();
+
+  let query = supabase
+    .from('news')
+    .select('*')
+    .order('published_at', { ascending: false });
+
+  if (limit) {
+    query = query.limit(limit);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error fetching news:', error);
+    throw error;
+  }
+
+  return data || [];
+}
+
+export async function createNews(news: Omit<News, 'id' | 'created_at'>): Promise<News> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('news')
+    .insert({
+      title: news.title,
+      url: news.url,
+      quote: news.quote,
+      source_name: news.source_name,
+      published_at: news.published_at,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating news:', error);
+    throw error;
+  }
+
+  return data;
+}
+
+export async function deleteNews(newsId: string): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase.from('news').delete().eq('id', newsId);
+
+  if (error) {
+    console.error('Error deleting news:', error);
     throw error;
   }
 }

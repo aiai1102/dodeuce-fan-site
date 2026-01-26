@@ -1,4 +1,14 @@
 // Database Types
+export interface News {
+  id: string;
+  title: string;
+  url: string;
+  quote: string | null;
+  source_name: string;
+  published_at: string;
+  created_at: string;
+}
+
 export interface Mare {
   id: string;
   netkeiba_id: string;

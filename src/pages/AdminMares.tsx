@@ -17,7 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Search, ExternalLink, Trash2, Upload, LogOut, List } from 'lucide-react';
+import { Search, ExternalLink, Trash2, Upload, LogOut, List, Newspaper } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function AdminMaresPage() {
@@ -98,7 +98,13 @@ export default function AdminMaresPage() {
           <Link to="/admin/mares">
             <Button variant="default" size="sm">
               <List className="mr-2 h-4 w-4" />
-              管理用一覧
+              牝馬管理
+            </Button>
+          </Link>
+          <Link to="/admin/news">
+            <Button variant="outline" size="sm">
+              <Newspaper className="mr-2 h-4 w-4" />
+              ニュース管理
             </Button>
           </Link>
         </div>
