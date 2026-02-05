@@ -82,7 +82,7 @@ export async function uploadCSVToDatabase(rows: CSVRow[]): Promise<UploadResult>
         birth_year: row.mare_birth_year ? parseInt(row.mare_birth_year) : null,
         sire_name: row.mare_sire_name || null,
         netkeiba_url: row.mare_netkeiba_url || null,
-        total_prize: row.total_prize ? parseInt(row.total_prize) : null,
+        total_prize: row.total_prize ? parseInt(row.total_prize.replace(/,/g, '')) : null,
         best_win_class: row.best_win_class || null,
       });
 
