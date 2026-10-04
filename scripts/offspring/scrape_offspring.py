@@ -44,7 +44,8 @@ SIRE_NAME = "ドウデュース"
 BASE_URL = "https://own.netkeiba.com/db/"
 LIST_PATH = "progeny_list.html"
 DETAIL_PATH = "horse.html"
-PUBLIC_HORSE_URL = "https://db.netkeiba.com/horse/{id}/"
+# 既存の交配牝馬CSV（mare_netkeiba_url）と同じ形式
+PUBLIC_HORSE_URL = "https://own.netkeiba.com/db/horse.html?id={id}"
 
 # netkeibaの馬IDは10文字の英数字（例: 2019105283 / 000a02c86e）。整数化しない。
 HORSE_ID_RE = re.compile(r"^[0-9a-z]{10}$")
@@ -88,10 +89,18 @@ def normalize_label(text: str) -> str:
     return re.sub(r"[\s:：]", "", normalize_text(text))
 
 
+# netkeibaは未掲載の項目を「-」で表示する。値として保存せず空欄にする
+PLACEHOLDERS = {"-", "－", "‐", "—", "―", "ー"}
+
+
+def blank_placeholder(text: str) -> str:
+    return "" if text in PLACEHOLDERS else text
+
+
 def cell_text(cell: Optional[Tag]) -> str:
     if cell is None:
         return ""
-    return normalize_text(cell.get_text(" "))
+    return blank_placeholder(normalize_text(cell.get_text(" ")))
 
 
 def extract_horse_id(href: str) -> Optional[str]:
@@ -244,6 +253,7 @@ class ListEntry:
     maternal_grandsire: str = ""
     breeder: str = ""
     owner: str = ""
+    sire_name: str = ""
 
 
 @dataclass
@@ -263,6 +273,7 @@ LIST_HEADER_MAP = {
     "生年月日": "birth_year",
     "母": "mother_name",
     "母名": "mother_name",
+    "父": "sire_name",
     "母父": "maternal_grandsire",
     "母の父": "maternal_grandsire",
     "生産者": "breeder",
@@ -324,6 +335,12 @@ def parse_list_page(html: str, page_url: str) -> ListPage:
 
 
 def parse_total_count(soup: BeautifulSoup) -> Optional[int]:
+    # 実ページ: <div class="ResultCurrentBox"><p class="Txt">15 件</p></div>
+    # （同じクラスの空の要素が先にあるため、すべて確認する）
+    for box in soup.find_all(class_="ResultCurrentBox"):
+        match = re.search(r"([\d,]+)\s*件", normalize_text(box.get_text(" ")))
+        if match:
+            return int(match.group(1).replace(",", ""))
     text = normalize_text(soup.get_text(" "))
     for pattern in (r"全\s*([\d,]+)\s*(?:件|頭)", r"([\d,]+)\s*(?:件|頭)中"):
         match = re.search(pattern, text)
@@ -387,9 +404,43 @@ def collect_labeled_cells(soup: BeautifulSoup) -> dict[str, Tag]:
     return cells
 
 
+def parse_header(soup: BeautifulSoup) -> tuple[str, str, str]:
+    """馬名見出し下の「牝 栗毛 2026年3月15日生 父ドウデュース」から性別・生年月日・父名を取る。"""
+    area = soup.find(class_="HorseHeader_Area")
+    data = area.find(class_="Data") if area is not None else None
+    if data is None:
+        return "", "", ""
+    text = normalize_text(data.get_text(" "))
+    birth_date = parse_birth_date(text) if "生" in text else ""
+    sire = re.search(r"父\s*(.+)$", text)
+    sex = ""
+    line = data.find_parent("p")
+    if line is not None:
+        first = line.find("span")
+        if first is not None and first is not data:
+            sex = normalize_sex(first.get_text())
+    return sex, birth_date, sire.group(1).strip() if sire else ""
+
+
+def split_dam_cell(cell: Optional[Tag]) -> tuple[Optional[str], str, str]:
+    """母欄。実ページでは母リンクの後に <p>母父: <a>…</a></p> が入れ子になっている。"""
+    if cell is None:
+        return None, "", ""
+    maternal_grandsire = ""
+    for p in cell.find_all("p"):
+        text = normalize_text(p.get_text(" "))
+        match = re.match(r"母父\s*[:：]?\s*(.*)$", text)
+        if match:
+            maternal_grandsire = blank_placeholder(match.group(1).strip())
+            p.extract()
+    mother_id, mother_link_text = first_horse_link(cell)
+    return mother_id, mother_link_text or cell_text(cell), maternal_grandsire
+
+
 def parse_detail_page(html: str) -> Detail:
     soup = parse_soup(html)
     cells = collect_labeled_cells(soup)
+    header_sex, header_birth_date, header_sire = parse_header(soup)
 
     def text(*labels: str) -> str:
         for label in labels:
@@ -399,22 +450,24 @@ def parse_detail_page(html: str) -> Detail:
 
     sire_cell = cells.get("父")
     sire_id, sire_link_text = first_horse_link(sire_cell)
-    mother_cell = cells.get("母")
-    mother_id, mother_link_text = first_horse_link(mother_cell)
+    mother_id, mother_name, dam_cell_grandsire = split_dam_cell(cells.get("母"))
 
-    sex = ""
+    sex = header_sex
     for label in ("性別", "性"):
-        if label in cells:
+        if not sex and label in cells:
             sex = normalize_sex(cell_text(cells[label]))
-            break
+
+    sire_name = sire_link_text or cell_text(sire_cell)
+    if sire_name and header_sire and sire_name != header_sire:
+        raise ScrapeError(f"父の表記が基本情報「{sire_name}」と見出し「{header_sire}」で異なります")
 
     return Detail(
         sire_id=sire_id,
-        sire_name=sire_link_text or cell_text(sire_cell),
+        sire_name=sire_name or header_sire,
         mother_id=mother_id,
-        mother_name=mother_link_text or cell_text(mother_cell),
-        maternal_grandsire=text("母父", "母の父"),
-        birth_date=parse_birth_date(text("生年月日")),
+        mother_name=mother_name,
+        maternal_grandsire=text("母父", "母の父") or dam_cell_grandsire,
+        birth_date=parse_birth_date(text("生年月日")) or header_birth_date,
         sex=sex,
         breeder=text("生産者"),
         owner=text("馬主"),
@@ -442,7 +495,7 @@ def list_url(page: Optional[int] = None) -> str:
 
 def merge_value(field_name: str, list_value: str, detail_value: str, horse_id: str, warnings: list[str]) -> str:
     """一覧と詳細の両方にある項目は詳細を優先し、食い違いは警告する。推測では補完しない。"""
-    if list_value and detail_value and list_value != detail_value:
+    if list_value and detail_value and list_value not in detail_value and detail_value not in list_value:
         warnings.append(f"{horse_id}: {field_name}が一覧「{list_value}」と詳細「{detail_value}」で異なります（詳細を採用）")
     return detail_value or list_value
 
@@ -492,7 +545,9 @@ def collect(fetcher: Fetcher, log: Callable[[str], None] = lambda m: None) -> Re
         log(f"詳細 {index}/{len(entries)}: {entry.name} ({horse_id})")
         detail = parse_detail_page(fetcher.get(url, f"horse_{horse_id}.html"))
 
-        # 3. 父の確認
+        # 3. 父の確認（一覧の父欄と詳細ページの父リンクの両方）
+        if entry.sire_name and entry.sire_name != SIRE_NAME:
+            raise ScrapeError(f"{horse_id}: 一覧の父が「{entry.sire_name}」でドウデュースではありません")
         if detail.sire_id is None and not detail.sire_name:
             raise ScrapeError(f"{horse_id}: 詳細ページで父を確認できません")
         if detail.sire_id is not None and detail.sire_id != SIRE_NETKEIBA_ID:

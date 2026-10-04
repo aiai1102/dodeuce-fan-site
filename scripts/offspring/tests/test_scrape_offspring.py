@@ -15,41 +15,83 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import scrape_offspring as so  # noqa: E402
 
-LIST_HEAD = """<html><head><meta http-equiv="Content-Type" content="text/html; charset=EUC-JP"></head><body>
+# 実際の公開HTML（2026-10-04確認）の構造を再現した架空データ:
+# - 総件数は <div class="ResultCurrentBox"><p class="Txt">15 件</p></div>（空の同名要素が先にある）
+# - 表は id="Search_ResultTable"。各行は馬名の<th>で始まり</td>で閉じる（閉じタグ不整合）
+# - 母欄はリンクなし（名前のみ）、未掲載は空欄
+LIST_HEAD = """<html><head><meta charset="utf-8"></head><body>
+<div class="ResultCurrentBox">
+<!--<p class="Txt">103 件</p>-->
+</div>
+<div class="ResultCurrentBox"><p class="Txt">{total} 件</p></div>
 <div class="Pager">{pager}</div>
-<p>全{total}件</p>
-<table class="Search_ResultTable">
-<tr><th>馬名</th><th>性</th><th>生年</th><th>母</th><th>母父</th></tr>
+<table class="NkOwnersTable01" id="Search_ResultTable">
+<thead><tr>
+<th name="name">馬名<span class="sort_icon"></span></th><th name="sex">性別</th><th name="birthyear">生年</th>
+<th name="trainer">厩舎</th><th name="f_name">父</th><th name="mare">母</th><th name="mf_name">母父</th>
+<th name="owner">馬主</th><th name="breeder">生産者</th><th>戦績</th><th name="prize">賞金</th><th>勝鞍クラス</th>
+</tr></thead>
+<tbody>
 {rows}
-</table></body></html>"""
+</tbody></table></body></html>"""
 
-# 母欄はリンクなし（名前のみ）
 LIST_ROW = (
-    '<tr><td><a href="/db/horse.html?id={id}">{name}</a></td><td>{sex}</td>'
-    "<td>{year}</td><td>{mother}</td><td>{bms}</td></tr>"
+    '<tr><th class="Head HorseName Txt_L Male">\n<a href="https://own.netkeiba.com/db/horse.html?id={id}">{name}</a>\n</td>'
+    '<td class="Txt_C"><span class="Male">{sex}</span></td><td>{year}</td><td>\n</td><td>{sire}</td>'
+    '<td>{mother}</td><td>{bms}</td><td>{owner}</td><td class="producer_breeder"></td><td>\n</td>'
+    '<td class="Txt_R">0万円</th><td class="Txt_L"></th></tr>'
 )
 
-# 基本情報は閉じタグが不整合（<th>…</td>、閉じタグなしの<td>）
-DETAIL = """<html><head><meta charset="EUC-JP"></head><body>
+# 詳細ページ: 性別・生年月日・父は見出し下の1行、基本情報は dl/dt/dd。
+# 母父は母欄の中に <p>母父: …</p> として入れ子。未掲載は「-」
+DETAIL = """<html><head><meta charset="utf-8"></head><body>
+<div class="HeaderSearchModal"><label>母父名</label><span>性別</span></div>
+<div class="HorseHeader_Area"><div class="HorseHeader_Inner">
+<div class="HorseHeader_NameWrap"><h1>テスト</h1></div>
+<p><span class="{sex_class}">{sex}</span><span class="Keiro">栗毛</span><span class="Data">{birth}生 父{sire_name}</span></p>
+</div></div>
+<div class="CatalogProfTable01"><ul>
+<li><dl><dt class="Sire">
+父
+</dt><dd class="Sire"><a href="https://own.netkeiba.com/db/horse.html?id={sire}" title="{sire_name}">{sire_name}</a></dd></dl></li>
+<li><dl><dt class="Dam">
+母
+</dt><dd class="Dam">{mother_html}
+<p>母父:
+<a href="https://own.netkeiba.com/db/horse.html?id=2000100000" title="{bms}">{bms}</a>
+</p></dd></dl></li>
+<li><dl><dt>馬主</dt><dd><div class="ClothesImgWrap"><img alt="{owner}"></div>
+{owner}
+</dd></dl></li>
+<li><dl><dt>調教師</dt><dd>-</dd></dl></li>
+<li><dl><dt>生産者</dt><dd>
+{breeder}
+</dd></dl></li>
+</ul></div>
+</body></html>"""
+
+# 以前の想定（th/td の表、閉じタグ不整合）も引き続き読めることを確認する
+LEGACY_DETAIL = """<html><head><meta charset="EUC-JP"></head><body>
 <table class="db_prof_table">
-<tr><th>生年月日</td><td>{birth}</th></tr>
-<tr><th>父<td><a href="/db/horse.html?id={sire}">{sire_name}</a>
-<tr><th>母</th><td>{mother_html}</td></tr>
-<tr><th>母父</th><td>{bms}</tr>
-<tr><th>生産者</th><td><a href="/db/breeder.html?id=x">{breeder}</a></td></tr>
-<tr><th>馬主</th><td>{owner}
+<tr><th>生年月日</td><td>2025年3月12日</th></tr>
+<tr><th>父<td><a href="/db/horse.html?id=2019105283">ドウデュース</a>
+<tr><th>母</th><td><a href="https://db.netkeiba.com/horse/2015199999/">テストマザー</a></td></tr>
+<tr><th>母父</th><td>テストグランサイア</tr>
+<tr><th>生産者</th><td><a href="/db/breeder.html?id=x">テストファーム</a></td></tr>
+<tr><th>馬主</th><td>テストオーナー
 </table>
-<table class="blood_table"><tr><th>父</th><td>別の表の父</td></tr></table>
 </body></html>"""
 
 
 def list_html(rows, total, pager=""):
-    body = "\n".join(LIST_ROW.format(**r) for r in rows)
+    defaults = dict(sex="", year="", sire="ドウデュース", mother="", bms="", owner="")
+    body = "\n".join(LIST_ROW.format(**{**defaults, **r}) for r in rows)
     return LIST_HEAD.format(rows=body, total=total, pager=pager)
 
 
 def detail_html(
     birth="2025年3月12日",
+    sex="牡",
     sire=so.SIRE_NETKEIBA_ID,
     sire_name="ドウデュース",
     mother_id="2015199999",
@@ -59,11 +101,19 @@ def detail_html(
     owner="テストオーナー",
 ):
     if mother_id:
-        mother_html = f'<a href="https://db.netkeiba.com/horse/{mother_id}/">{mother_name}</a>'
+        mother_html = f'<a href="https://own.netkeiba.com/db/horse.html?id={mother_id}" title="{mother_name}">{mother_name}</a>'
     else:
         mother_html = mother_name
     return DETAIL.format(
-        birth=birth, sire=sire, sire_name=sire_name, mother_html=mother_html, bms=bms, breeder=breeder, owner=owner
+        birth=birth,
+        sex=sex or "",
+        sex_class="FeMale" if sex == "牝" else "Male",
+        sire=sire,
+        sire_name=sire_name,
+        mother_html=mother_html,
+        bms=bms,
+        breeder=breeder or "-",
+        owner=owner or "-",
     )
 
 
@@ -74,8 +124,8 @@ class OfflineSite:
         self._tmp = tempfile.TemporaryDirectory()
         self.dir = Path(self._tmp.name)
 
-    def put(self, key, html):
-        (self.dir / key).write_bytes(html.encode("euc_jis_2004"))
+    def put(self, key, html, encoding="utf-8"):
+        (self.dir / key).write_bytes(html.encode(encoding))
 
     def fetcher(self):
         return so.Fetcher(offline_dir=self.dir)
@@ -85,8 +135,9 @@ class OfflineSite:
 
 
 class ParseTest(unittest.TestCase):
-    def test_detail_with_broken_tags(self):
-        detail = so.parse_detail_page(detail_html())
+    def test_detail_real_structure(self):
+        detail = so.parse_detail_page(detail_html(sex="牝"))
+        self.assertEqual(detail.sex, "牝")
         self.assertEqual(detail.sire_id, so.SIRE_NETKEIBA_ID)
         self.assertEqual(detail.mother_id, "2015199999")
         self.assertEqual(detail.mother_name, "テストマザー")
@@ -95,12 +146,31 @@ class ParseTest(unittest.TestCase):
         self.assertEqual(detail.breeder, "テストファーム")
         self.assertEqual(detail.owner, "テストオーナー")
 
+    def test_detail_placeholder_is_blank(self):
+        detail = so.parse_detail_page(detail_html(breeder="", owner=""))
+        self.assertEqual((detail.breeder, detail.owner), ("", ""))
+
+    def test_detail_sire_mismatch_between_header_and_table_fails(self):
+        html = detail_html().replace("父ドウデュース", "父ベツノウマ")
+        with self.assertRaises(so.ScrapeError):
+            so.parse_detail_page(html)
+
+    def test_legacy_table_with_broken_tags(self):
+        detail = so.parse_detail_page(so.decode_html(LEGACY_DETAIL.encode("euc_jis_2004")))
+        self.assertEqual(detail.sire_id, so.SIRE_NETKEIBA_ID)
+        self.assertEqual(detail.mother_id, "2015199999")
+        self.assertEqual(detail.birth_date, "2025-03-12")
+        self.assertEqual(detail.maternal_grandsire, "テストグランサイア")
+        self.assertEqual(detail.owner, "テストオーナー")
+
     def test_alphanumeric_id_is_kept_as_text(self):
         page = so.parse_list_page(
-            list_html([dict(id="000a02c86e", name="テストAの2025", sex="牡", year="2025", mother="テストマザー", bms="X")], 1),
+            list_html([dict(id="000a02c86e", name="テストAの2025", sex="牡", year="2025", mother="テストマザー", bms="X", owner="-")], 1),
             so.list_url(),
         )
         self.assertEqual(page.entries[0].netkeiba_id, "000a02c86e")
+        self.assertEqual(page.entries[0].sire_name, "ドウデュース")
+        self.assertEqual(page.entries[0].owner, "")
         self.assertEqual(page.entries[0].mother_name, "テストマザー")
         self.assertEqual(page.total_count, 1)
 
@@ -154,11 +224,17 @@ class CollectTest(unittest.TestCase):
             ),
         )
         self.site.put("horse_000a02c86e.html", detail_html())
-        self.site.put("horse_2025190001.html", detail_html(birth="2025年4月1日", mother_id="2016100001", mother_name="同名マザー"))
-        # 同名の母でもIDが異なる（詳細ページのリンクで区別される）。性別は詳細にもなく空欄のまま
+        # 2頭目は旧来のEUC-JPページでも読めることを確認
+        self.site.put(
+            "horse_2025190001.html",
+            detail_html(birth="2025年4月1日", sex="牝", mother_id="2016100001", mother_name="同名マザー"),
+            encoding="euc_jis_2004",
+        )
+        # 同名の母でもIDが異なる（詳細ページのリンクで区別される）。性別・生年月日は未掲載で空欄のまま
         self.site.put(
             "horse_2026190002.html",
-            detail_html(birth="", mother_id="2017100002", mother_name="同名マザー", bms="", breeder="", owner=""),
+            detail_html(birth="", sex="", mother_id="2017100002", mother_name="同名マザー", bms="", breeder="", owner="")
+            .replace("<span class=\"Data\">生 父ドウデュース", "<span class=\"Data\">父ドウデュース"),
         )
 
     def test_collect_multi_page(self):
@@ -186,9 +262,16 @@ class CollectTest(unittest.TestCase):
         with self.assertRaisesRegex(so.ScrapeError, "一致しません"):
             so.collect(self.site.fetcher())
 
+    def test_list_non_dodeuce_sire_fails(self):
+        self.two_pages()
+        page = list_html([dict(id="000a02c86e", name="テストAの2025", year="2025", sire="ベツノチチ")], 1)
+        self.site.put("list_page1.html", page)
+        with self.assertRaisesRegex(so.ScrapeError, "一覧の父"):
+            so.collect(self.site.fetcher())
+
     def test_non_dodeuce_sire_fails(self):
         self.two_pages()
-        self.site.put("horse_2025190001.html", detail_html(sire="2010100000", sire_name="ベツノチチ"))
+        self.site.put("horse_2025190001.html", detail_html(birth="2025年4月1日", sire="2010100000", sire_name="ベツノチチ"))
         with self.assertRaisesRegex(so.ScrapeError, "ドウデュースではありません"):
             so.collect(self.site.fetcher())
 
@@ -200,7 +283,7 @@ class CollectTest(unittest.TestCase):
 
     def test_mother_without_link_warns(self):
         self.two_pages()
-        self.site.put("horse_2025190001.html", detail_html(mother_id="", mother_name="同名マザー"))
+        self.site.put("horse_2025190001.html", detail_html(birth="2025年4月1日", mother_id="", mother_name="同名マザー"))
         result = so.collect(self.site.fetcher())
         row = next(r for r in result.rows if r["netkeiba_id"] == "2025190001")
         self.assertEqual(row["mother_netkeiba_id"], "")

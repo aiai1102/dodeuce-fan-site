@@ -12,7 +12,7 @@ import { formatDate } from '@/lib/utils/format';
 const NOT_LISTED_NOTE = '掲載がないことは、産駒がいないことや未誕生であることを意味しません。';
 
 function motherNetkeibaUrl(netkeibaId: string): string {
-  return `https://db.netkeiba.com/horse/${netkeibaId}/`;
+  return `https://own.netkeiba.com/db/horse.html?id=${netkeibaId}`;
 }
 
 function OffspringName({ offspring, iconClassName }: { offspring: Offspring; iconClassName: string }) {
