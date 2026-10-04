@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getMaresByYear } from '@/lib/supabase/queries';
+import { getMaresByYear, getCoverSeasonYears, getOffspringCountsByMother } from '@/lib/supabase/queries';
 import type { MareWithCoverRecord, MareFilters, SortField, SortOrder } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,13 +12,30 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, ExternalLink } from 'lucide-react';
 import { formatDate, formatPrize, formatNumber } from '@/lib/utils/format';
 
-// 2025年が初年度産駒（毎年9月頃に手動でデータ追加、必要に応じて年度を追加）
-const YEARS = [2025];
+// 年度の取得に失敗した場合の表示（2025年が初年度）
+const FALLBACK_YEARS = [2025];
+
+// この母のドウデュース産駒一覧へのリンク（母のnetkeiba IDで紐付け、馬名には依存しない）
+function DodeuceOffspringLink({ mareNetkeibaId, counts }: { mareNetkeibaId: string; counts: Map<string, number> }) {
+  const count = counts.get(mareNetkeibaId) || 0;
+  if (count === 0) return <>-</>;
+  return (
+    <Link to={`/offspring?mother=${encodeURIComponent(mareNetkeibaId)}`} className="text-blue-600 hover:underline">
+      {count}頭を見る
+    </Link>
+  );
+}
 
 export default function MaresListPage() {
   const { year } = useParams<{ year: string }>();
   const navigate = useNavigate();
-  const currentYear = year ? parseInt(year) : 2025;
+  const parsedYear = year && /^\d{4}$/.test(year) ? Number(year) : null;
+
+  // 年度は交配記録が登録済みの年度をDBから表示する（CSVを追加すれば自動で増える）
+  const [years, setYears] = useState<number[] | null>(null);
+  // 母のnetkeiba IDごとのドウデュース産駒数（取得できない場合はnullで列を表示しない）
+  const [offspringCounts, setOffspringCounts] = useState<Map<string, number> | null>(null);
+  const currentYear = parsedYear ?? years?.[0] ?? null;
 
   const [mares, setMares] = useState<MareWithCoverRecord[]>([]);
   const [filteredMares, setFilteredMares] = useState<MareWithCoverRecord[]>([]);
@@ -29,6 +46,26 @@ export default function MaresListPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
   useEffect(() => {
+    getCoverSeasonYears()
+      .then((data) => setYears(data.length > 0 ? data : FALLBACK_YEARS))
+      .catch(() => setYears(FALLBACK_YEARS));
+
+    // 産駒テーブル未作成などで失敗しても繁殖牝馬一覧は表示する
+    getOffspringCountsByMother()
+      .then(setOffspringCounts)
+      .catch(() => setOffspringCounts(null));
+  }, []);
+
+  // /mares（年度指定なし）は登録済みの最新年度へ
+  useEffect(() => {
+    if (!year && years && years.length > 0) {
+      navigate(`/mares/${years[0]}`, { replace: true });
+    }
+  }, [year, years, navigate]);
+
+  useEffect(() => {
+    if (currentYear === null) return;
+
     async function fetchMares() {
       try {
         setLoading(true);
@@ -112,7 +149,7 @@ export default function MaresListPage() {
 
       <div className="mb-6">
         <div className="flex gap-2">
-          {YEARS.map((y) => (
+          {(years ?? (currentYear !== null ? [currentYear] : [])).map((y) => (
             <Button
               key={y}
               variant={y === currentYear ? 'default' : 'outline'}
@@ -177,6 +214,9 @@ export default function MaresListPage() {
           </div>
 
           <div className="mb-4 text-sm text-gray-600">{filteredMares.length}件の牝馬が見つかりました</div>
+          <p className="mb-4 text-xs text-gray-500">
+            ※ 既出走産駒・代表産駒は、父を問わない母の産駒全体の情報です（ドウデュース産駒に限りません）。
+          </p>
 
           {/* PC版テーブル */}
           <div className="hidden overflow-x-auto rounded-lg border bg-white shadow-sm md:block">
@@ -192,6 +232,7 @@ export default function MaresListPage() {
                   <TableHead className="w-[120px]">勝鞍クラス</TableHead>
                   <TableHead className="w-[100px] text-center">既出走産駒</TableHead>
                   <TableHead className="w-[180px]">代表産駒</TableHead>
+                  {offspringCounts && <TableHead className="w-[120px]">ドウデュース産駒</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -238,6 +279,11 @@ export default function MaresListPage() {
                         '-'
                       )}
                     </TableCell>
+                    {offspringCounts && (
+                      <TableCell>
+                        <DodeuceOffspringLink mareNetkeibaId={mare.mares.netkeiba_id} counts={offspringCounts} />
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -307,6 +353,14 @@ export default function MaresListPage() {
                           ) : (
                             mare.representative_offspring_name
                           )}
+                        </dd>
+                      </div>
+                    )}
+                    {offspringCounts && (
+                      <div className="flex justify-between">
+                        <dt className="font-semibold text-gray-700">ドウデュース産駒:</dt>
+                        <dd className="text-gray-900">
+                          <DodeuceOffspringLink mareNetkeibaId={mare.mares.netkeiba_id} counts={offspringCounts} />
                         </dd>
                       </div>
                     )}

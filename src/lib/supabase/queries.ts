@@ -1,5 +1,5 @@
 import { createClient } from './client';
-import type { MareWithCoverRecord, Mare, CoverRecord } from '@/lib/types';
+import type { MareWithCoverRecord, Mare, CoverRecord, Offspring } from '@/lib/types';
 
 export async function getMaresByYear(year: number): Promise<MareWithCoverRecord[]> {
   const supabase = createClient();
@@ -129,4 +129,75 @@ export async function deleteMare(mareId: string): Promise<void> {
     console.error('Error deleting mare:', error);
     throw error;
   }
+}
+
+// 交配記録が登録されている年度（新しい順）
+export async function getCoverSeasonYears(): Promise<number[]> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.from('cover_records').select('season_year');
+
+  if (error) {
+    console.error('Error fetching season years:', error);
+    throw error;
+  }
+
+  const years = new Set((data || []).map((row: { season_year: number }) => row.season_year));
+  return [...years].sort((a, b) => b - a);
+}
+
+export async function getOffspring(): Promise<Offspring[]> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('offspring')
+    .select('*')
+    .order('birth_year', { ascending: false, nullsFirst: false })
+    .order('birth_date', { ascending: true, nullsFirst: false })
+    .order('name');
+
+  if (error) {
+    console.error('Error fetching offspring:', error);
+    throw error;
+  }
+
+  return data || [];
+}
+
+// 母のnetkeiba IDごとの産駒頭数（繁殖牝馬一覧からのリンク用）
+export async function getOffspringCountsByMother(): Promise<Map<string, number>> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('offspring')
+    .select('mother_netkeiba_id')
+    .not('mother_netkeiba_id', 'is', null);
+
+  if (error) {
+    console.error('Error fetching offspring counts:', error);
+    throw error;
+  }
+
+  const counts = new Map<string, number>();
+  (data || []).forEach((row: { mother_netkeiba_id: string }) => {
+    counts.set(row.mother_netkeiba_id, (counts.get(row.mother_netkeiba_id) || 0) + 1);
+  });
+  return counts;
+}
+
+// 産駒CSVを1トランザクションで取り込む（1件でもエラーがあれば全件ロールバック）
+export async function importOffspring(
+  rows: Record<string, string>[]
+): Promise<{ inserted_count: number; updated_count: number }> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.rpc('import_offspring', { rows });
+
+  if (error) {
+    console.error('Error importing offspring:', error);
+    throw error;
+  }
+
+  const result = Array.isArray(data) ? data[0] : data;
+  return result || { inserted_count: 0, updated_count: 0 };
 }

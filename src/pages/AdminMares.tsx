@@ -17,7 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Search, ExternalLink, Trash2, Upload, LogOut, List } from 'lucide-react';
+import { Search, ExternalLink, Trash2, Upload, LogOut, List, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function AdminMaresPage() {
@@ -99,6 +99,12 @@ export default function AdminMaresPage() {
             <Button variant="default" size="sm">
               <List className="mr-2 h-4 w-4" />
               管理用一覧
+            </Button>
+          </Link>
+          <Link to="/admin/offspring-import">
+            <Button variant="outline" size="sm">
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              産駒CSV
             </Button>
           </Link>
         </div>
@@ -201,6 +207,8 @@ export default function AdminMaresPage() {
               {mareToDelete?.name}を削除しますか？
               <br />
               この操作は取り消せません。関連する交配記録も全て削除されます。
+              <br />
+              ドウデュース産駒のデータは削除されず、この母との紐付けのみ解除されます。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

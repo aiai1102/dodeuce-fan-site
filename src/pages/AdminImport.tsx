@@ -7,7 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { parseCSV, uploadCSVToDatabase } from '@/lib/csv/processor';
 import type { UploadResult } from '@/lib/types';
-import { AlertCircle, CheckCircle2, Upload, LogOut, List } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Upload, LogOut, List, FileSpreadsheet } from 'lucide-react';
 
 export default function AdminImportPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -76,6 +76,12 @@ export default function AdminImportPage() {
             <Button variant="outline" size="sm">
               <List className="mr-2 h-4 w-4" />
               管理用一覧
+            </Button>
+          </Link>
+          <Link to="/admin/offspring-import">
+            <Button variant="outline" size="sm">
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              産駒CSV
             </Button>
           </Link>
         </div>
