@@ -22,6 +22,8 @@
 - **管理用一覧**: 登録済牝馬の検索・削除
 - **産駒CSV取込**: `scripts/offspring/` で生成した産駒CSVを確認して取り込み
 
+交配牝馬CSVは `scripts/mares/netkeiba_mating_csv_generator.py`（使い方は `scripts/mares/README.md`）で生成します。2025年の本番データは `data/mares_2025.csv`（202頭）です。
+
 産駒一覧の設計・取得方法・本番への適用手順・獲得賞金の補正手順は [docs/offspring-feature.md](docs/offspring-feature.md) を参照してください。
 
 ## セットアップ
