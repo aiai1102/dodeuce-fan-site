@@ -12,13 +12,19 @@
 
 ### 一般ユーザー向け
 - **トップページ**: ドウデュース紹介、将来機能の告知
-- **交配牝馬一覧**: 年別表示（2025年から）、フィルタ・ソート機能
+- **交配牝馬一覧**: 年別表示（登録済みの年度をDBから表示）、フィルタ・ソート機能
+- **産駒一覧**: ドウデュース産駒の一覧、生年・母での絞り込み
 - **レスポンシブ対応**: PC（テーブル形式）、スマホ（カード形式）
 
 ### 管理者向け
 - **管理者ログイン**: Supabase Auth（メール+パスワード）
 - **CSVアップロード**: 交配牝馬データの一括登録・更新
 - **管理用一覧**: 登録済牝馬の検索・削除
+- **産駒CSV取込**: `scripts/offspring/` で生成した産駒CSVを確認して取り込み
+
+交配牝馬CSVは `scripts/mares/netkeiba_mating_csv_generator.py`（使い方は `scripts/mares/README.md`）で生成します。2025年の本番データは `data/mares_2025.csv`（202頭）です。
+
+産駒一覧の設計・取得方法・本番への適用手順・獲得賞金の補正手順は [docs/offspring-feature.md](docs/offspring-feature.md) を参照してください。
 
 ## セットアップ
 
@@ -47,6 +53,9 @@ Supabaseプロジェクトを作成後、`supabase/migrations/001_initial_schema
 3. 左メニューから「SQL Editor」を選択
 4. `001_initial_schema.sql`の内容をコピー&ペースト
 5. 「Run」ボタンをクリックして実行
+6. 続けて `002_add_offspring.sql`（産駒テーブル）を同様に実行
+
+> 既存のDBには `001_initial_schema.sql` を再実行しないでください（サンプルデータが再挿入されます）。既存DBへは `002_add_offspring.sql` のみ適用します。
 
 ### 4. 管理者アカウントの作成
 
@@ -172,10 +181,13 @@ pnpm run lint
 ## ルート構成
 
 - `/` - トップページ
-- `/mares/:year` - 交配牝馬一覧（2025年から）
+- `/mares` - 交配牝馬一覧（登録済みの最新年度へ移動）
+- `/mares/:year` - 交配牝馬一覧
+- `/offspring` - 産駒一覧（`?year=2026`、`?mother=<母のnetkeiba ID>` で絞り込み）
 - `/admin/login` - 管理者ログイン
 - `/admin/import` - CSVアップロード
 - `/admin/mares` - 管理用一覧
+- `/admin/offspring-import` - 産駒CSV取込
 
 ## Phase2以降の予定
 

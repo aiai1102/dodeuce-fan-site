@@ -68,3 +68,40 @@ export interface MareFilters {
 
 export type SortField = 'cover_date' | 'name' | 'total_prize' | 'birth_year';
 export type SortOrder = 'asc' | 'desc';
+
+// 産駒（offspringテーブル）
+// 戦績・勝数・賞金・主な勝鞍・厩舎などは将来この型とテーブルに列を追加する
+export type OffspringSex = '牡' | '牝' | 'セ';
+
+export interface Offspring {
+  id: string;
+  netkeiba_id: string;
+  name: string;
+  birth_year: number | null;
+  birth_date: string | null;
+  sex: OffspringSex | null;
+  mother_id: string | null;
+  mother_netkeiba_id: string | null;
+  mother_name: string | null;
+  maternal_grandsire: string | null;
+  breeder: string | null;
+  owner: string | null;
+  netkeiba_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// 産駒CSV（scripts/offspring/scrape_offspring.py の出力）
+export interface OffspringCSVRow {
+  netkeiba_id: string;
+  name: string;
+  sex: string;
+  birth_year: string;
+  birth_date: string;
+  mother_netkeiba_id: string;
+  mother_name: string;
+  maternal_grandsire: string;
+  breeder: string;
+  owner: string;
+  netkeiba_url: string;
+}

@@ -62,10 +62,15 @@ export default function HomePage() {
             交配牝馬の情報を中心にまとめています。
           </motion.p>
 
-          <motion.div variants={fadeInUp}>
+          <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/mares/2025">
               <Button size="lg" className="text-lg px-8 py-6 shadow-2xl hover:scale-105 transition-transform">
                 交配牝馬一覧を見る（2025年）
+              </Button>
+            </Link>
+            <Link to="/offspring">
+              <Button size="lg" variant="secondary" className="text-lg px-8 py-6 shadow-2xl hover:scale-105 transition-transform">
+                産駒一覧を見る
               </Button>
             </Link>
           </motion.div>

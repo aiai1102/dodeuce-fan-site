@@ -1,6 +1,35 @@
 import Papa from 'papaparse';
 import type { CSVRow, ValidationResult, UploadResult } from '@/lib/types';
 import { upsertMare, upsertCoverRecord } from '@/lib/supabase/queries';
+import { parseNonNegativeInt, parsePrize, type IntParseResult } from './number';
+
+// 数値項目を厳密に変換した結果（不正値は途中で切り捨てずエラーにする）
+interface ParsedNumbers {
+  seasonYear: number | null;
+  mareBirthYear: number | null;
+  totalPrize: number | null;
+  offspringsStarted: number | null;
+}
+
+function parseRowNumbers(row: CSVRow): { values: ParsedNumbers; errors: string[] } {
+  const errors: string[] = [];
+  const pick = (result: IntParseResult): number | null => {
+    if (result.error !== null) {
+      errors.push(result.error);
+    }
+    return result.value;
+  };
+
+  return {
+    values: {
+      seasonYear: pick(parseNonNegativeInt(row.season_year, 'season_year')),
+      mareBirthYear: pick(parseNonNegativeInt(row.mare_birth_year, 'mare_birth_year')),
+      totalPrize: pick(parsePrize(row.total_prize)),
+      offspringsStarted: pick(parseNonNegativeInt(row.offsprings_started, 'offsprings_started')),
+    },
+    errors,
+  };
+}
 
 export function parseCSV(file: File): Promise<CSVRow[]> {
   return new Promise((resolve, reject) => {
@@ -31,15 +60,11 @@ export function validateCSVRow(row: CSVRow, rowNumber: number): ValidationResult
     errors.push(`${rowNumber}行目: mare_nameが必須です`);
   }
 
-  if (row.season_year && isNaN(parseInt(row.season_year))) {
-    errors.push(`${rowNumber}行目: season_yearは数値である必要があります`);
-  }
+  const { values, errors: numberErrors } = parseRowNumbers(row);
+  numberErrors.forEach((message) => errors.push(`${rowNumber}行目: ${message}`));
 
-  if (row.season_year) {
-    const year = parseInt(row.season_year);
-    if (year < 1900 || year > 2100) {
-      errors.push(`${rowNumber}行目: season_yearは1900〜2100の範囲である必要があります`);
-    }
+  if (values.seasonYear !== null && (values.seasonYear < 1900 || values.seasonYear > 2100)) {
+    errors.push(`${rowNumber}行目: season_yearは1900〜2100の範囲である必要があります`);
   }
 
   if (row.netkeiba_id && !/^[a-z0-9]{10}$/.test(row.netkeiba_id)) {
@@ -76,23 +101,25 @@ export async function uploadCSVToDatabase(rows: CSVRow[]): Promise<UploadResult>
         continue;
       }
 
+      const { values } = parseRowNumbers(row);
+
       const mare = await upsertMare({
         netkeiba_id: row.netkeiba_id,
         name: row.mare_name,
-        birth_year: row.mare_birth_year ? parseInt(row.mare_birth_year) : null,
+        birth_year: values.mareBirthYear,
         sire_name: row.mare_sire_name || null,
         netkeiba_url: row.mare_netkeiba_url || null,
-        total_prize: row.total_prize ? parseInt(row.total_prize) : null,
+        total_prize: values.totalPrize,
         best_win_class: row.best_win_class || null,
       });
 
       await upsertCoverRecord({
         stallion_name: 'ドウデュース',
         mare_id: mare.id,
-        season_year: parseInt(row.season_year),
+        season_year: values.seasonYear,
         cover_date: row.cover_date || null,
         expected_foaling_date: row.expected_foaling_date || null,
-        offsprings_started: row.offsprings_started ? parseInt(row.offsprings_started) : null,
+        offsprings_started: values.offspringsStarted,
         representative_offspring_name: row.representative_offspring_name || null,
         representative_offspring_url: row.representative_offspring_url || null,
       });
@@ -112,4 +139,24 @@ export async function uploadCSVToDatabase(rows: CSVRow[]): Promise<UploadResult>
   }
 
   return result;
+}
+
+// 産駒CSVを読み込む（列名の前後空白・BOMを除去）
+export function parseOffspringCSV(
+  file: File
+): Promise<{ rows: Partial<Record<string, string>>[]; headers: string[] }> {
+  return new Promise((resolve, reject) => {
+    Papa.parse<Partial<Record<string, string>>>(file, {
+      header: true,
+      skipEmptyLines: 'greedy',
+      encoding: 'UTF-8',
+      transformHeader: (header) => header.replace(/^\uFEFF/, '').trim(),
+      complete: (results) => {
+        resolve({ rows: results.data, headers: results.meta.fields || [] });
+      },
+      error: (error) => {
+        reject(new Error('CSVパースエラー: ' + error.message));
+      },
+    });
+  });
 }
